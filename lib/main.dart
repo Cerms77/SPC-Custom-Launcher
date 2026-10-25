@@ -18,6 +18,7 @@
 
 import 'dart:async';
 import 'dart:ui';
+import 'package:timezone/data/latest.dart' as tzdata;
 
 import 'package:flauncher/database.dart';
 import 'package:flauncher/flauncher_channel.dart';
@@ -42,6 +43,7 @@ import 'flauncher_app.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   initializeDateFormatting();
+  tzdata.initializeTimeZones();
 
   // Configure LRU Image Cache bounds to preserve RAM on Android TV devices
   PaintingBinding.instance.imageCache.maximumSizeBytes = 35 * 1024 * 1024; // 35MB max RAM
