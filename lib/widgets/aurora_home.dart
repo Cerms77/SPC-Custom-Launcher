@@ -359,16 +359,7 @@ class _AppCircle extends StatelessWidget {
             onTap: onTap,
             autofocus: autofocus,
             semanticLabel: shortcut.name,
-            child: Text(
-              shortcut.glyph,
-              maxLines: 1,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _snow,
-                fontWeight: FontWeight.w700,
-                fontSize: shortcut.glyph.length >= 6 ? size * 0.19 : size * 0.29,
-              ),
-            ),
+            child: _AppLogo(shortcut: shortcut, size: size),
           ),
           const SizedBox(height: 9),
           Text(
@@ -380,6 +371,68 @@ class _AppCircle extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AppLogo extends StatelessWidget {
+  final _AppShortcut shortcut;
+  final double size;
+
+  const _AppLogo({required this.shortcut, required this.size});
+
+  Widget _fallback() => Text(
+        shortcut.glyph,
+        maxLines: 1,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: _snow,
+          fontWeight: FontWeight.w700,
+          fontSize: shortcut.glyph.length >= 6 ? size * 0.19 : size * 0.29,
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final service = context.watch<AppsService>();
+    App? app;
+    for (final package in shortcut.packages) {
+      for (final installed in service.applications) {
+        if (installed.packageName.toLowerCase() == package.toLowerCase()) {
+          app = installed;
+          break;
+        }
+      }
+      if (app != null) break;
+    }
+    if (app == null) {
+      for (final name in shortcut.names) {
+        for (final installed in service.applications) {
+          if (installed.name.trim().toLowerCase() == name.toLowerCase()) {
+            app = installed;
+            break;
+          }
+        }
+        if (app != null) break;
+      }
+    }
+    if (app == null) return _fallback();
+    return FutureBuilder(
+      future: service.getAppIcon(app.packageName),
+      builder: (context, snapshot) {
+        final iconBytes = snapshot.data;
+        if (iconBytes == null || iconBytes.isEmpty) return _fallback();
+        return ClipOval(
+          child: Image.memory(
+            iconBytes,
+            width: size * 0.55,
+            height: size * 0.55,
+            fit: BoxFit.contain,
+            gaplessPlayback: true,
+            errorBuilder: (_, __, ___) => _fallback(),
+          ),
+        );
+      },
     );
   }
 }
