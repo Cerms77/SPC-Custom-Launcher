@@ -9,7 +9,7 @@ import 'package:flauncher/providers/apps_service.dart';
 import 'package:flauncher/providers/tv_inputs_service.dart';
 import 'package:flauncher/widgets/settings/inputs_panel.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:provider/provider.dart';
 import 'package:timezone/timezone.dart' as tz;
 
