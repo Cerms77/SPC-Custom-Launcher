@@ -1,3 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<dream xmlns:android="http://schemas.android.com/apk/res/android"
-    android:settingsActivity="com.leanbitlab.ltvL/.MainActivity" />
+<!--
+  Aurora's photo slideshow does not have a separate configuration screen.
+  Do not declare android:settingsActivity here: the old package link opened
+  the wrong app / returned to the previous app on the SPC Android TV.
+  Android's system screensaver picker can select this DreamService directly.
+-->
+<dream xmlns:android="http://schemas.android.com/apk/res/android" />
