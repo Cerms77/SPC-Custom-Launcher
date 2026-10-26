@@ -87,9 +87,9 @@
         </activity>
 
         <service
-            android:name=".ClockScreensaverService"
+            android:name=".AuroraSlideshowDreamService"
             android:exported="true"
-            android:label="LTvLauncher Clock"
+            android:label="SPC Aurora Photos"
             android:permission="android.permission.BIND_DREAM_SERVICE">
             <intent-filter>
                 <action android:name="android.service.dreams.DreamService" />
