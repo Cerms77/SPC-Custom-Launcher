@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:provider/provider.dart';
@@ -373,7 +372,7 @@ class _TintedLogo extends StatelessWidget {
       case 'apple':
         logo = Row(mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min, children: [
-          Icon(CupertinoIcons.logo_apple, color: color, size: size * .36),
+          Icon(Icons.apple, color: color, size: size * .36),
           Text('tv', style: TextStyle(color: color,
               fontSize: size * .34, fontWeight: FontWeight.w600)),
         ]);
