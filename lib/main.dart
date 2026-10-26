@@ -1,6 +1,5 @@
-// SPC Aurora Launcher: recoverable diagnostic startup.
-// This temporary test screen helps distinguish a Flutter engine failure
-// from an error in the original launcher initialization or services.
+// Aurora Launcher V1.0 — launch directly with a recoverable startup fallback.
+// Keep the recovery screen available if a platform/service initialization fails.
 import 'dart:async';
 import 'dart:ui';
 
@@ -24,6 +23,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'flauncher_app.dart';
+import 'widgets/aurora_backdrop.dart';
 
 final ValueNotifier<String?> auroraRuntimeError = ValueNotifier<String?>(null);
 
@@ -45,26 +45,39 @@ void main() {
     return true;
   };
 
-  // Render immediately, before any database, plugin or service initialization.
-  runApp(const AuroraDiagnosticBoot());
+  // Draw the Aurora startup layer immediately while its services initialize.
+  runApp(const AuroraBoot());
 }
 
-class AuroraDiagnosticBoot extends StatefulWidget {
-  const AuroraDiagnosticBoot({super.key});
+class AuroraBoot extends StatefulWidget {
+  const AuroraBoot({super.key});
 
   @override
-  State<AuroraDiagnosticBoot> createState() => _AuroraDiagnosticBootState();
+  State<AuroraBoot> createState() => _AuroraBootState();
 }
 
-class _AuroraDiagnosticBootState extends State<AuroraDiagnosticBoot> {
+class _AuroraBootState extends State<AuroraBoot> {
   bool _launching = false;
+  bool _autoStartPending = true;
   Widget? _fullLauncher;
   String? _startupError;
 
+  @override
+  void initState() {
+    super.initState();
+    // Automatic startup; users should never have to press a diagnostic button.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _startFullLauncher();
+    });
+  }
+
   Future<void> _startFullLauncher() async {
     if (_launching) return;
+    auroraRuntimeError.value = null;
     setState(() {
+      _autoStartPending = false;
       _launching = true;
+      _fullLauncher = null;
       _startupError = null;
     });
 
@@ -137,14 +150,14 @@ class _AuroraDiagnosticBootState extends State<AuroraDiagnosticBoot> {
     return ValueListenableBuilder<String?>(
       valueListenable: auroraRuntimeError,
       builder: (context, runtimeError, _) {
-        if (runtimeError != null) return _diagnosticScreen(runtimeError, false);
+        if (runtimeError != null) return _recoveryScreen(runtimeError);
         if (_fullLauncher != null) return _fullLauncher!;
-        return _diagnosticScreen(_startupError, !_launching);
+        return _recoveryScreen(_startupError);
       },
     );
   }
 
-  Widget _diagnosticScreen(String? error, bool allowStart) {
+  Widget _recoveryScreen(String? error) {
     const textColor = Color(0xFFF4F7FF);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -153,13 +166,7 @@ class _AuroraDiagnosticBootState extends State<AuroraDiagnosticBoot> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(
-              'assets/aurora_wallpaper.jpg',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const ColoredBox(
-                color: Color(0xFF101426),
-              ),
-            ),
+            const AuroraBackdrop(),
             const ColoredBox(color: Color(0xAA101426)),
             Center(
               child: SingleChildScrollView(
@@ -170,7 +177,7 @@ class _AuroraDiagnosticBootState extends State<AuroraDiagnosticBoot> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
-                        'SPC AURORA · STARTUP TEST',
+                        'AURORA LAUNCHER',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: textColor,
@@ -182,8 +189,8 @@ class _AuroraDiagnosticBootState extends State<AuroraDiagnosticBoot> {
                       const SizedBox(height: 18),
                       Text(
                         error == null
-                            ? 'Aurora Flutter display is running. This is a temporary diagnostic screen, not your finished home screen.'
-                            : 'Aurora reported the following error. Please photograph or copy it so we can identify the cause.',
+                            ? 'Starting your home screen…'
+                            : 'Aurora could not start. You can retry, or use your original launcher.',
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: textColor, fontSize: 18),
                       ),
@@ -203,13 +210,13 @@ class _AuroraDiagnosticBootState extends State<AuroraDiagnosticBoot> {
                             ),
                           ),
                         )
-                      else if (_launching)
+                      else if (_launching || _autoStartPending)
                         const Column(
                           children: [
                             CircularProgressIndicator(),
                             SizedBox(height: 14),
                             Text(
-                              'Starting original launcher services…',
+                              'Loading Aurora…',
                               style: TextStyle(color: textColor, fontSize: 17),
                             ),
                           ],
@@ -217,20 +224,20 @@ class _AuroraDiagnosticBootState extends State<AuroraDiagnosticBoot> {
                       else
                         ElevatedButton(
                           autofocus: true,
-                          onPressed: allowStart ? _startFullLauncher : null,
+                          onPressed: _startFullLauncher,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 17),
                             backgroundColor: const Color(0xFFAEF5D4),
                             foregroundColor: const Color(0xFF101426),
                           ),
                           child: const Text(
-                            'START AURORA HOME',
+                            'RETRY AURORA',
                             style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
                           ),
                         ),
                       const SizedBox(height: 20),
                       const Text(
-                        'Your original LTvLauncher remains installed and unchanged.',
+                        'Your original LTvLauncher remains installed as a backup.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Color(0xFFE2D6FF), fontSize: 14),
                       ),
