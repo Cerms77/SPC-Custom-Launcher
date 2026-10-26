@@ -3,7 +3,7 @@ package com.leanbitlab.ltvL;
 /*
  * SPC Aurora photo screensaver.
  * Displays the 15 bundled pictures, with a gentle crossfade every 45 seconds.
- * Small Prague and New York clocks update once a minute, including DST changes.
+ * Small Prague and Pittsburgh clocks update automatically, including DST changes.
  * No network, advertising, or third-party photo services are used.
  */
 import android.animation.Animator;
@@ -51,7 +51,8 @@ public final class AuroraSlideshowDreamService extends DreamService {
     private FrameLayout root;
     private ImageView currentImage;
     private TextView pragueTime;
-    private TextView newYorkTime;
+    private TextView pittsburghTime;
+    private TextView dateText;
     private int photoIndex;
     private boolean active;
 
@@ -93,6 +94,7 @@ public final class AuroraSlideshowDreamService extends DreamService {
         }
 
         addClockOverlay();
+        addDateOverlay();
         updateClock();
         handler.postDelayed(slideshowTick, IMAGE_INTERVAL_MS);
         handler.postDelayed(clockTick, CLOCK_REFRESH_MS);
@@ -196,9 +198,9 @@ public final class AuroraSlideshowDreamService extends DreamService {
         clockPanel.setBackground(panelBackground);
 
         pragueTime = newTimeText();
-        newYorkTime = newTimeText();
-        clockPanel.addView(pragueTime);
-        clockPanel.addView(newYorkTime);
+        pittsburghTime = newTimeText();
+        clockPanel.addView(newClockRow("PRAGUE", pragueTime));
+        clockPanel.addView(newClockRow("PITTSBURGH", pittsburghTime));
 
         FrameLayout.LayoutParams position = new FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -207,6 +209,47 @@ public final class AuroraSlideshowDreamService extends DreamService {
         );
         position.setMargins(dp(20), dp(20), dp(30), dp(28));
         root.addView(clockPanel, position);
+    }
+
+    // A fixed label column keeps the Prague and Pittsburgh times perfectly aligned.
+    private LinearLayout newClockRow(String cityName, TextView timeValue) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView cityLabel = newTimeText();
+        cityLabel.setText(cityName);
+        cityLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        cityLabel.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        cityLabel.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+        row.addView(cityLabel, new LinearLayout.LayoutParams(
+            dp(124), ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+
+        timeValue.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        row.addView(timeValue, new LinearLayout.LayoutParams(
+            dp(100), ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+        return row;
+    }
+
+    private void addDateOverlay() {
+        dateText = newTimeText();
+        dateText.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        dateText.setPadding(dp(15), dp(10), dp(15), dp(10));
+
+        GradientDrawable panelBackground = new GradientDrawable();
+        panelBackground.setColor(0x74071120);
+        panelBackground.setCornerRadius(dp(11));
+        dateText.setBackground(panelBackground);
+
+        FrameLayout.LayoutParams position = new FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.LEFT | Gravity.BOTTOM
+        );
+        position.setMargins(dp(30), dp(20), dp(20), dp(28));
+        root.addView(dateText, position);
     }
 
     private TextView newTimeText() {
@@ -222,10 +265,17 @@ public final class AuroraSlideshowDreamService extends DreamService {
     }
 
     private void updateClock() {
-        if (pragueTime == null || newYorkTime == null) return;
+        if (pragueTime == null || pittsburghTime == null || dateText == null) return;
+
         Date current = new Date();
-        pragueTime.setText("PRAGUE    " + formattedTime(current, "Europe/Prague"));
-        newYorkTime.setText("NEW YORK    " + formattedTime(current, "America/New_York"));
+        pragueTime.setText(formattedTime(current, "Europe/Prague"));
+        // Pittsburgh observes Eastern Time: EST in winter, EDT in summer.
+        pittsburghTime.setText(formattedTime(current, "America/New_York"));
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM d", Locale.US);
+        // Match the home screen's date convention (Prague local date).
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Prague"));
+        dateText.setText(dateFormat.format(current));
     }
 
     private String formattedTime(Date moment, String zoneId) {
@@ -250,7 +300,8 @@ public final class AuroraSlideshowDreamService extends DreamService {
         if (root != null) root.removeAllViews();
         currentImage = null;
         pragueTime = null;
-        newYorkTime = null;
+        pittsburghTime = null;
+        dateText = null;
         root = null;
         super.onDetachedFromWindow();
     }
